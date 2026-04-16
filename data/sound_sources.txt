@@ -1,0 +1,8 @@
+Sound sources
+
+bell.wav, https://freesound.org/people/marcolo91/sounds/156090/
+plucked_string.wav, synthesized (Karplus-Strong algorithm, f0 = 440 Hz)
+sine.wav, synthesized (f0 = 220 Hz)
+clap.wav, https://freesound.org/people/ChuckChuckGoof/sounds/846706/
+seashore.wav, https://freesound.org/people/IENBA/sounds/489398/
+vowel_a.wav, https://freesound.org/people/polmc/sounds/87760/
