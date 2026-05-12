@@ -6,7 +6,7 @@ Prof. Dr. Jakob Abeßer
 
 jakob.abesser@uni-bamberg.de
 
-Last update: **04.05.2026**
+Last update: **12.05.2026**
 
 ## Jupyter Notebooks (Seminar)
 
@@ -25,5 +25,9 @@ Last update: **04.05.2026**
 - 04 - Human Hearing and Sound Attributes
     - [IPython Notebook (ipynb)](CH-EAM-B-Seminar-04-Human_Hearing_and_Sound_Attributes.ipynb)
     - [Open in Google Colab](https://colab.research.google.com/github/CHBamberg/CH-EAM-B-SS-2026/blob/main/CH-EAM-B-Seminar-04-Human_Hearing_and_Sound_Attributes.ipynb)
+
+- 05 - Timbre
+    - [IPython Notebook (ipynb)](CH-EAM-B-Seminar-05-Timbre.ipynb)
+    - [Open in Google Colab](https://colab.research.google.com/github/CHBamberg/CH-EAM-B-SS-2026/blob/main/CH-EAM-B-Seminar-05-Timbre.ipynb)
 
         
