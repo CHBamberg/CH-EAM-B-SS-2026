@@ -1,0 +1,295 @@
+### Introduction to Audio and Music Processing (CH-EAM-B)
+# 05 - Timbre
+
+Prof. Dr. Jakob Abeßer (jakob.abesser@uni-bamberg.de)
+
+Last update: 11.05.2026
+
+## Learning Objectives
+
+- Compute and visualize Mel-Frequency Cepstral Coefficients (MFCC)
+- Implement temporal feature aggregation
+- Visualize a high-dimensional feature space using Principal Component Analysis (PCA)
+
+## Audio Material
+
+We are using free instrument note samples provided by the Philharmonia_Orchestra_Library (https://philharmonia.co.uk/resources/sound-samples/)
+
+
+We have three sound examples of notes with different pitches for the 5 instruments 
+- Bass clarinet
+- Bassoon
+- Cello
+- Flute
+- French Horn
+
+
+!pip install wget
+
+import numpy as np
+import matplotlib.pyplot as plt
+import wget
+import zipfile
+import os
+import glob
+
+import librosa
+import librosa.display
+import soundfile as sf
+
+from pathlib import Path
+from IPython.display import Audio, display, Markdown
+
+# download zip file (if it has been downloaded already)
+if not os.path.isfile('CH-EAM-B-Seminar-05_sounds.zip'):
+    print('Please wait a couple of seconds ...')
+    wget.download('https://github.com/CHBamberg/CH-EAM-B-SS-2026/raw/refs/heads/main/data/CH-EAM-B-Seminar-05_sounds.zip', 
+                      out='CH-EAM-B-Seminar-05_sounds.zip', bar=None)
+    print('CH-EAM-B-Seminar-05_sounds.zip downloaded successfully ...')
+else:
+    print('Files already exist!')
+
+# if at least one of the audio files does not exist -> unzip zip file
+if not os.path.isfile('cello_A2_1_fortissimo_arco-normal.wav'):
+    print("Let's unzip the file ... ")
+    assert os.path.isfile('CH-EAM-B-Seminar-05_sounds.zip')
+    with zipfile.ZipFile('CH-EAM-B-Seminar-05_sounds.zip', 'r') as f:
+        f.extractall('.')
+        
+    print("All done :)")
+else:
+    print('All audio files exist.')
+    
+dir_wav = 'CH-EAM-B-Seminar-05_sounds'
+
+## Helper Functions
+
+def show_audio(y, sr, label=None):
+    """ Show playback button to listen to audio file
+    Args:
+        y (np.ndarray): Audio samples
+        sr (float): Sample rate (in Hz)
+        label (str): Optional label
+    """
+    if label is not None:
+        display(Markdown(f"**{label}**"))
+    display(Audio(y, rate=sr, normalize=False))
+    
+def plot_waveform(y, sr, start_s=0.0, end_s=None, title="Waveform"):
+    """ Plot waveform of audio recording or a segment thereof
+    Args:
+        y (np.ndarray): Audio samples
+        sr (float): Sample rate (in Hz)
+        start_s (float): Segement start (in s)
+        end_s (float): Segment end (in s), if None: end of the file is used
+        title (str): optional figure title
+    """
+    start = int(start_s * sr)
+    end = len(y) if end_s is None else int(end_s * sr)
+    end = min(end, len(y))
+    start = max(0, start)
+
+    t = np.arange(start, end) / sr
+
+    plt.figure(figsize=(10, 2.5))
+    plt.plot(t, y[start:end], linewidth=1)
+    plt.xlabel("Time (s)")
+    plt.ylabel("Amplitude")
+    plt.title(title)
+    plt.tight_layout()
+    plt.show()
+
+
+# Let's listen to the audio files
+fn_list = ('bass-clarinet_A2_05_fortissimo_normal.wav',
+           'bassoon_A2_05_fortissimo_normal.wav',
+           'cello_A2_1_fortissimo_arco-normal.wav',
+           'flute_A4_1_forte_normal.wav',
+           'french-horn_A2_1_fortissimo_normal.wav')
+for fn_wav in fn_list:
+    x, fs = librosa.load(os.path.join(dir_wav, fn_wav), sr=None)
+    plot_waveform(x, fs, title=os.path.basename(fn_wav))
+    show_audio(x, fs)
+
+## 1) Temporal Envelope
+
+# TASK 1a: Describe the overall shape of the three waveforms. How do they differ?
+
+## 2) Mel-Frequency Cepstral Coefficients
+
+Now, we want to compute the MFCC as acoustic features to characterize the timbre of the instrument samples.
+
+## 2a) Inspection for different musical instruments
+
+# Configuration
+n_mfcc = 6
+
+for fn_wav in fn_list:
+    
+    file_path = os.path.join(dir_wav, fn_wav)
+    
+    # 1a. Load the audio
+    y, sr = librosa.load(file_path)
+    
+    # 1b. Normalize the audio to peak volum
+    y /= (1.1 * np.max(np.abs(y)))
+    
+    # 2. Compute MFCCs (first 6 coefficients)
+    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
+
+    # 3. Create the plot
+    fig, (ax_wave, ax_mfcc) = plt.subplots(nrows=2, sharex=True, figsize=(5, 3))
+    
+    # Plot Waveform
+    librosa.display.waveshow(y, sr=sr, ax=ax_wave)
+    # ax_wave.set(title=f'Visualization for {file_path}', ylabel='Amplitude')
+    ax_wave.label_outer() # Hide x-axis labels for the top plot
+
+    # Plot MFCCs
+    img = librosa.display.specshow(mfccs, sr=sr, x_axis='time', ax=ax_mfcc)
+    ax_mfcc.set(ylabel='MFCC')
+    
+    plt.tight_layout()
+    plt.show()
+
+## 2b) Temporal feature aggregation
+
+Since audio clips have different durations, we need to represent each clip by a **fixed-size** feature vector in order to compare them. 
+
+A common approach for **temporal aggregation** is to compute the first-order statistics
+
+- mean
+- standard deviation
+- skewness
+- kurtosis
+
+across all time frames of the MFCC matrix and use these as features instead of the "raw" MFCC frame-level values.
+
+Here's a simple feature extraction function that implements the mean aggregation:
+
+def compute_mfcc_agg(fn_wav, n_mfcc=6):
+    """ Compute Mel-Frequency Cepstral Coefficients (MFCC) and perform 
+        temporal feature aggretation
+    Args:
+        fn_wav (str): Audio file name
+        n_mfcc (int): Number of coefficients
+    Returns:
+        feat_vec (np.ndarray): Feature vector
+        
+        """
+    # Load the audio
+    y, sr = librosa.load(fn_wav)
+
+    # Compute MFCCs (first 6 coefficients)
+    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
+    
+    # Temporal aggregation
+    mfcc_mean = np.mean(mfccs, axis=1)
+
+    return mfcc_mean
+
+# Let's test the function with the first audio example
+file_path = os.path.join(dir_wav, fn_list[0])
+feat_vec = compute_mfcc_agg(file_path)
+print(feat_vec.shape)
+
+## 3) Instrument classification
+
+Now we want to use our entire dataset of 15 clips and visualize each clip in the **feature space** based on the aggregated MFCC features. Our hypothesis is that since MFCC capture main aspects of timbre, audio clips from the same instruments should have similar feature values and hence close-by locations in the feature space.
+
+# Let us collect first a list of all wav file names
+# We'll use the glob.glob() method to find all files that include {"bass", "bassoon", "cello", "flute", "french-horn"}
+fn_list = glob.glob(os.path.join(dir_wav, "*.wav"))
+print(f"Found {len(fn_list)} files.")
+
+# let us split the filename using .split("_") to get the instrument label and pitch label for each file
+inst = [os.path.basename(_).split('_')[0] for _ in fn_list]
+pitch = [os.path.basename(_).split('_')[1] for _ in fn_list]
+
+print(inst, pitch)
+
+# Compute feature vectors for all files
+all_feat_vec = []
+for fn in fn_list:
+    all_feat_vec.append(compute_mfcc_agg(fn))
+
+# finally apply vertical stacking to get a proper "feature matrix" (num_files x num_features)
+feat_mat = np.vstack(all_feat_vec)
+
+print(feat_mat.shape)
+
+
+Now we have a feature matrix of shape (15,6). We want to create a scatter plot in two dimensions (x,y). Therefore, we need to reduce the dimensionality of the feature space.
+
+### Principal Component Analysis (PCA)
+
+We can use Principal Component Analysis (PCA) for this, as it identifies the directions in our feature space, which explain most of the variance in the data.
+
+Here is an example: http://en.wikipedia.org/wiki/Principal_component_analysis#/media/File:GaussianScatterPCA.svg
+
+We need two steps:
+1. Normalize the data to zero mean and unit variance in each feature dimension.
+2. Apply PCA to map from 6 dimensions to 2 dimensions.
+
+# We need two additional classes from the scikit-learn library
+# a) the class implementing the PCA
+from sklearn.decomposition import PCA
+# b) the class that implements the zero-mean unit-variance normalization
+from sklearn.preprocessing import StandardScaler
+
+# Apply normalization first (since PCA is sensitive to the input distribution of the feature dimensions)
+scaler = StandardScaler()
+feat_mat_scaled = scaler.fit_transform(feat_mat)
+
+# Instantiate the PCA class, define the number of dimensions that we want
+pca = PCA(n_components=2)
+
+# Transform the feature space: identify the two directions in the feature space that contain most of the variance
+feat_mat_2D = pca.fit_transform(feat_mat_scaled)
+
+print(feat_mat_2D.shape)
+
+Finally, let's create a scatter plot to visualize our feature space.
+
+# let us use the instrument labels to group the clips
+
+labels = inst
+
+unique_labels = sorted(list(set(labels)))
+colors = ['r', 'g', 'b', 'k', 'c']
+markers = ['o', 's', '^', 'D', 'p'] # Circle, Square, Triangle, Diamond, Pentagon
+
+# 3. Create the plot
+fig, ax = plt.subplots(figsize=(5,5))
+
+for i, label in enumerate(unique_labels):
+    # Find indices where the label matches the current category
+    indices = [j for j, l in enumerate(labels) if l == label]
+    
+    # Plot the subset of points
+    ax.scatter(
+        feat_mat_2D[indices, 0], 
+        feat_mat_2D[indices, 1], 
+        label=label, 
+        c=colors[i], 
+        marker=markers[i], 
+        s=100,           # Size of markers
+        edgecolor='w',   # White edge for better visibility
+        alpha=0.9
+    )
+
+# 4. Add metadata and legend
+ax.set_title('PCA-reduced Feature Space ', fontsize=14)
+ax.set_xlabel('Principal Component 1')
+ax.set_ylabel('Principal Component 2')
+
+# Place legend outside the main plot area for clarity
+ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+## What to do next?
+
+- use more MFCC coefficients and check the feature space visualization
+- use the pitch label instead of the instrument label to investigate, whether MFCCs are really invariant to pitch
+- add standard deviation, kurtosis, skewness to the feature vector
+
+Done :)
