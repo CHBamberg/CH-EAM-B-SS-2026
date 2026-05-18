@@ -6,7 +6,7 @@ Prof. Dr. Jakob Abeßer
 
 jakob.abesser@uni-bamberg.de
 
-Last update: **12.05.2026**
+Last update: **18.05.2026**
 
 ## Jupyter Notebooks (Seminar)
 
@@ -30,4 +30,9 @@ Last update: **12.05.2026**
     - [IPython Notebook (ipynb)](CH-EAM-B-Seminar-05-Timbre.ipynb)
     - [Open in Google Colab](https://colab.research.google.com/github/CHBamberg/CH-EAM-B-SS-2026/blob/main/CH-EAM-B-Seminar-05-Timbre.ipynb)
 
+- 06 - Time-Frequency Transformation 1/2
+    - [IPython Notebook (ipynb)](CH-EAM-B-Seminar-06-Time-Frequency_Transformation_1.ipynb)
+    - [Open in Google Colab](https://colab.research.google.com/github/CHBamberg/CH-EAM-B-SS-2026/blob/main/CH-EAM-B-Seminar-06-Time-Frequency_Transformation_1.ipynb)
+
+        
         
