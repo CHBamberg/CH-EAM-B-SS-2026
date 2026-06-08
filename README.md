@@ -35,8 +35,8 @@ Last update: **18.05.2026**
     - [Open in Google Colab](https://colab.research.google.com/github/CHBamberg/CH-EAM-B-SS-2026/blob/main/CH-EAM-B-Seminar-06-Time-Frequency_Transformation_1.ipynb)
 
 - 07 - Time-Frequency Transformation 2/2
-    - [IPython Notebook (ipynb)](CH-EAM-B-Seminar-06-Time-Frequency_Transformation_2.ipynb)
-    - [Open in Google Colab](https://colab.research.google.com/github/CHBamberg/CH-EAM-B-SS-2026/blob/main/CH-EAM-B-Seminar-06-Time-Frequency_Transformation_2.ipynb)
+    - [IPython Notebook (ipynb)](CH-EAM-B-Seminar-07-Time-Frequency_Transformation_2.ipynb)
+    - [Open in Google Colab](https://colab.research.google.com/github/CHBamberg/CH-EAM-B-SS-2026/blob/main/CH-EAM-B-Seminar-07-Time-Frequency_Transformation_2.ipynb)
 
         
         
